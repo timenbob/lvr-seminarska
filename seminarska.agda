@@ -39,3 +39,20 @@ _ = Lit (Var 0) ∧ Lit (¬Var 1)      -- x₀ ∧ ¬x₁
 
 _ : NNF
 _ = (Lit (Var 0) ∨ Lit (¬Var 1)) ∧ Lit (Var 2)
+
+
+-- (3)
+-- funkcija to nnf
+-- tip
+to-nnf : Formula → NNF
+
+to-nnf (Var n)   = Lit (Var n)
+to-nnf (φ ∧ ψ)   = to-nnf φ ∧ to-nnf ψ
+to-nnf (φ ∨ ψ)   = to-nnf φ ∨ to-nnf ψ
+to-nnf (¬ (Var n)) = Lit (¬Var n)
+to-nnf (¬ (φ ∧ ψ)) = to-nnf (¬ φ) ∨ to-nnf (¬ ψ)
+to-nnf (¬ (φ ∨ ψ)) = to-nnf (¬ φ) ∧ to-nnf (¬ ψ)
+to-nnf (¬ (¬ φ))   = to-nnf φ
+
+
+-- (4)
