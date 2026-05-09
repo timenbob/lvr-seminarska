@@ -1,4 +1,4 @@
-module lvr_seminarska.seminarska where
+module seminarska where
 
 open import Data.Nat
 open import Data.Empty
@@ -6,7 +6,7 @@ open import Data.Empty
 open import Data.List    using (List; []; _∷_)
 open import Data.Maybe   using (Maybe; nothing; just)
 open import Data.Product using (_×_; _,_; proj₁; proj₂)
-open import Data.Bool    using (Bool; not)
+open import Data.Bool    using (Bool; not; true; false) renaming (_∧_ to _∧ᵇ_; _∨_ to _∨ᵇ_)
 open import Relation.Binary using (DecidableEquality)
 open import Data.Nat.Properties using (_≟_)
 open import Relation.Nullary using (Dec; yes; no)
@@ -104,6 +104,39 @@ module Assoc (K : DecType) (V : Set) where
   [] [ k ]≔ v = (k , v) ∷ []
   ((k' , v') ∷ kvs) [ k ]≔ v with test-≡ K k k'
   ... | yes _ = (k , v) ∷ kvs  
-  ... | no  _ = (k' , v') ∷ (kvs [ k ]≔ v)  
--- (5)
+  ... | no  _ = (k' , v') ∷ (kvs [ k ]≔ v) 
 
+
+-- (5)
+VarDec : DecType
+VarDec = record { carr = ℕ ; test-≡ = _≟_ }
+
+open Assoc VarDec Bool renaming (Assoc to Assignment)
+
+eval : Assignment → Formula → Maybe Bool
+eval ρ (Var n) = ρ ‼ n
+eval ρ (¬ φ) with eval ρ φ
+... | just b  = just (not b)
+... | nothing = nothing
+eval ρ (φ ∧ ψ) with eval ρ φ | eval ρ ψ
+... | just b₁ | just b₂ = just (b₁ ∧ᵇ b₂)
+... | _       | _       = nothing
+eval ρ (φ ∨ ψ) with eval ρ φ | eval ρ ψ
+... | just b₁ | just b₂ = just (b₁ ∨ᵇ b₂)
+... | _       | _       = nothing
+
+-- Primeri
+ρ : Assignment
+ρ = (0 , true) ∷ (1 , false) ∷ []
+
+_ : eval ρ (Var 0) ≡ just true
+_ = refl
+
+_ : eval ρ (Var 0 ∧ Var 1) ≡ just false
+_ = refl
+
+_ : eval ρ (Var 0 ∨ Var 1) ≡ just true
+_ = refl
+
+_ : eval ρ (Var 2) ≡ nothing
+_ = refl
