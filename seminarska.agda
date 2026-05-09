@@ -11,7 +11,7 @@ open import Relation.Binary using (DecidableEquality)
 open import Data.Nat.Properties using (_≟_)
 open import Relation.Nullary using (Dec; yes; no)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
-
+open import Data.Unit using (⊤; tt)
 -- (1)
 
 data Formula : Set where 
@@ -75,20 +75,35 @@ open DecType
 module Assoc (K : DecType) (V : Set) where
 
   Assoc : Set
-  Assoc = {!!}
+  Assoc = List (carr K × V)  
 
   _∈_ : carr K → Assoc → Set
-  k ∈ kvs = {!!}
-
+  k ∈ [] = ⊥
+  k ∈ ((k' , v) ∷ kvs) with test-≡ K k k'
+  ... | yes _ = ⊤
+  ... | no  _ = k ∈ kvs
+  
   lookup : {k : carr K} {kvs : Assoc} → k ∈ kvs → V
-  lookup p = {!!}
+  lookup {k = k} {(k' , v) ∷ kvs} p with test-≡ K k k'
+  ... | yes _ = v
+  ... | no  _ = lookup p
 
   _∈?_ : (k : carr K) → (kvs : Assoc) → Dec (k ∈ kvs)
-  k ∈? kvs = {!!}
+  k ∈? [] = no (λ ())
+  k ∈? ((k' , v) ∷ kvs) with test-≡ K k k'
+  ... | yes _ = yes tt
+  ... | no  _ = k ∈? kvs
 
   _‼_ : (kvs : Assoc) → (k : carr K) → Maybe V
-  kvs ‼ k = {!!}
+  [] ‼ k = nothing
+  ((k' , v) ∷ kvs) ‼ k with test-≡ K k k'
+  ... | yes _ = just v
+  ... | no  _ = kvs ‼ k
 
   _[_]≔_ : Assoc → carr K → V → Assoc
-  kvs [ k ]≔ v = {!!}
+  [] [ k ]≔ v = (k , v) ∷ []
+  ((k' , v') ∷ kvs) [ k ]≔ v with test-≡ K k k'
+  ... | yes _ = (k , v) ∷ kvs  
+  ... | no  _ = (k' , v') ∷ (kvs [ k ]≔ v)  
+-- (5)
 
