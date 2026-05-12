@@ -84,9 +84,10 @@ module Assoc (K : DecType) (V : Set) where
   ... | no  _ = k ∈ kvs
   
   lookup : {k : carr K} {kvs : Assoc} → k ∈ kvs → V
+  lookup {k = k} {[]} ()
   lookup {k = k} {(k' , v) ∷ kvs} p with test-≡ K k k'
   ... | yes _ = v
-  ... | no  _ = lookup p
+  ... | no  _ = lookup {k = k} {kvs = kvs} p
 
   _∈?_ : (k : carr K) → (kvs : Assoc) → Dec (k ∈ kvs)
   k ∈? [] = no (λ ())
@@ -172,3 +173,24 @@ _ = refl
 _ : eval-nnf ρ₆ ((Lit (Var 0) ∨ Lit (Var 1)) ∧ Lit (¬Var 1)) ≡ just true
 _ = refl
 
+-- (7) CNF type
+data Disjunct : Set where
+  Lit : Literal → Disjunct
+  _∨_ : Literal → Disjunct → Disjunct
+
+data CNF : Set where
+  Dis : Disjunct → CNF
+  _∧_ : Disjunct → CNF → CNF
+
+-- Primeri CNF formul
+-- x₀
+_ : CNF
+_ = Dis (Lit (Var 0))
+
+-- (x₀ ∨ ¬x₁)
+_ : CNF
+_ = Dis (Var 0 ∨ Lit (¬Var 1))
+
+-- (x₀ ∨ ¬x₁) ∧ (x₂)
+_ : CNF
+_ = (Var 0 ∨ Lit (¬Var 1)) ∧ Dis (Lit (Var 2))
