@@ -126,17 +126,49 @@ eval ρ (φ ∨ ψ) with eval ρ φ | eval ρ ψ
 ... | _       | _       = nothing
 
 -- Primeri
-ρ : Assignment
-ρ = (0 , true) ∷ (1 , false) ∷ []
+ρ₅ : Assignment
+ρ₅ = (0 , true) ∷ (1 , false) ∷ []
 
-_ : eval ρ (Var 0) ≡ just true
+_ : eval ρ₅ (Var 0) ≡ just true
 _ = refl
 
-_ : eval ρ (Var 0 ∧ Var 1) ≡ just false
+_ : eval ρ₅ (Var 0 ∧ Var 1) ≡ just false
 _ = refl
 
-_ : eval ρ (Var 0 ∨ Var 1) ≡ just true
+_ : eval ρ₅ (Var 0 ∨ Var 1) ≡ just true
 _ = refl
 
-_ : eval ρ (Var 2) ≡ nothing
+_ : eval ρ₅ (Var 2) ≡ nothing
 _ = refl
+
+-- (6)
+eval-nnf : Assignment → NNF → Maybe Bool
+eval-nnf ρ (Lit (Var n)) = ρ ‼ n
+eval-nnf ρ (Lit (¬Var n)) with ρ ‼ n
+... | just b  = just (not b)
+... | nothing = nothing
+eval-nnf ρ (φ ∧ ψ) with eval-nnf ρ φ | eval-nnf ρ ψ
+... | just b₁ | just b₂ = just (b₁ ∧ᵇ b₂)
+... | _       | _       = nothing
+eval-nnf ρ (φ ∨ ψ) with eval-nnf ρ φ | eval-nnf ρ ψ
+... | just b₁ | just b₂ = just (b₁ ∨ᵇ b₂)
+... | _       | _       = nothing
+
+-- Primeri za eval-nnf
+ρ₆ : Assignment
+ρ₆ = (0 , true) ∷ (1 , false) ∷ []
+_ : eval-nnf ρ₆ (Lit (Var 0)) ≡ just true
+_ = refl
+
+_ : eval-nnf ρ₆ (Lit (¬Var 1)) ≡ just true
+_ = refl
+
+_ : eval-nnf ρ₆ (Lit (Var 0) ∧ Lit (Var 1)) ≡ just false
+_ = refl
+
+_ : eval-nnf ρ₆ (Lit (Var 0) ∨ Lit (Var 2)) ≡ nothing
+_ = refl
+
+_ : eval-nnf ρ₆ ((Lit (Var 0) ∨ Lit (Var 1)) ∧ Lit (¬Var 1)) ≡ just true
+_ = refl
+
