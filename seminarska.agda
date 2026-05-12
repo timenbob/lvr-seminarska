@@ -194,3 +194,53 @@ _ = Dis (Var 0 ∨ Lit (¬Var 1))
 -- (x₀ ∨ ¬x₁) ∧ (x₂)
 _ : CNF
 _ = (Var 0 ∨ Lit (¬Var 1)) ∧ Dis (Lit (Var 2))
+
+-- (8)  eval-cnf
+
+eval-lit : Assignment → Literal → Maybe Bool
+eval-lit ρ (Var n) = ρ ‼ n
+eval-lit ρ (¬Var n) with ρ ‼ n
+... | just b  = just (not b)
+... | nothing = nothing
+
+eval-dis : Assignment → Disjunct → Maybe Bool
+eval-dis ρ (Lit l) = eval-lit ρ l
+eval-dis ρ (l ∨ d) with eval-lit ρ l | eval-dis ρ d
+... | just b₁ | just b₂ = just (b₁ ∨ᵇ b₂)
+... | _       | _       = nothing
+
+eval-cnf : Assignment → CNF → Maybe Bool
+eval-cnf ρ (Dis d) = eval-dis ρ d
+eval-cnf ρ (d ∧ φ) with eval-dis ρ d | eval-cnf ρ φ
+... | just b₁ | just b₂ = just (b₁ ∧ᵇ b₂)
+... | _       | _       = nothing
+
+-- Primeri za eval-cnf
+ρ₈ : Assignment
+ρ₈ = (0 , true) ∷ (1 , false) ∷ (2 , true) ∷ []
+
+-- x₀ (true)
+_ : eval-cnf ρ₈ (Dis (Lit (Var 0))) ≡ just true
+_ = refl
+
+-- (x₁ ∨ x₂) (false ∨ true = true)
+_ : eval-cnf ρ₈ (Dis (Var 1 ∨ Lit (Var 2))) ≡ just true
+_ = refl
+
+-- (x₀ ∨ x₁) ∧ x₁ ((true ∨ false) ∧ false = false)
+_ : eval-cnf ρ₈ ((Var 0 ∨ Lit (Var 1)) ∧ Dis (Lit (Var 1))) ≡ just false
+_ = refl
+
+-- x₀ ∧ ¬x₁ ∧ x₂ (true ∧ true ∧ true = true)
+_ : eval-cnf ρ₈ (Lit (Var 0) ∧ (Lit (¬Var 1) ∧ Dis (Lit (Var 2)))) ≡ just true
+_ = refl
+
+-- neznana spremenljivka (x₃)
+_ : eval-cnf ρ₈ (Dis (Lit (Var 3))) ≡ nothing
+_ = refl
+
+
+-- (9) DPLL SAT SOLVER
+
+
+-- (10) Tseytin transformation NNF --> CNF
