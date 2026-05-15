@@ -1,9 +1,9 @@
-module seminarska where
+module seminarska  where
 
 open import Data.Nat
 open import Data.Empty
 
-open import Data.List    using (List; []; _∷_)
+open import Data.List    using (List; []; _∷_; _++_)
 open import Data.Maybe   using (Maybe; nothing; just)
 open import Data.Product using (_×_; _,_; proj₁; proj₂)
 open import Data.Bool    using (Bool; not; true; false) renaming (_∧_ to _∧ᵇ_; _∨_ to _∨ᵇ_)
@@ -12,6 +12,9 @@ open import Data.Nat.Properties using (_≟_)
 open import Relation.Nullary using (Dec; yes; no)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 open import Data.Unit using (⊤; tt)
+
+-- za 9
+open import Function using (case_of_)
 -- (1)
 
 data Formula : Set where 
@@ -242,5 +245,53 @@ _ = refl
 
 -- (9) DPLL SAT SOLVER
 
+-- najprej poberemo vse spremenljivke na kup
+vars-lit : Literal → List ℕ
+vars-lit (Var n) = n ∷ []
+vars-lit (¬Var n) = n ∷ []  
+
+vars-dis : Disjunct → List ℕ
+vars-dis (Lit l)  = vars-lit l     
+vars-dis (l ∨ d)  = vars-lit l ++ vars-dis d  
+
+vars-cnf : CNF → List ℕ
+vars-cnf (Dis d) = vars-dis d
+vars-cnf (d ∧ φ) = vars-dis d ++ vars-cnf φ
+
+-- odstranimo duplikate iz seznama spremenljivk
+-- preprosta funkcija, ki preveri ali je število že v seznamu
+_∈ₙ?_ : ℕ → List ℕ → Bool
+n ∈ₙ? []       = false
+n ∈ₙ? (m ∷ ms) with n ≟ m
+... | yes _ = true
+... | no  _ = n ∈ₙ? ms
+-- funkcija, ki odstrani duplikate iz seznama
+nub : List ℕ → List ℕ
+nub []       = []
+nub (x ∷ xs) with x ∈ₙ? xs
+... | true  = nub xs
+... | false = x ∷ nub xs
+-- DPLL algoritem
+
+dpll : List ℕ → Assignment → CNF → Maybe Assignment
+dpll [] ρ φ with eval-cnf ρ φ
+... | just true = just ρ
+... | _         = nothing
+
+dpll (n ∷ ns) ρ φ =
+  case dpll ns (ρ [ n ]≔ true) φ of λ where
+    (just a) → just a
+    nothing  → dpll ns (ρ [ n ]≔ false) φ
+
+sat : CNF → Maybe Assignment
+sat φ = dpll (nub (vars-cnf φ)) [] φ
+
+-- x₀ ∧ ¬x₀ (unsatisfiable)
+_ : sat (Lit (Var 0) ∧ Dis (Lit (¬Var 0))) ≡ nothing
+_ = refl
+
+-- x₀ ∨ x₁ (satisfiable) vrnemo obliko  just ((0 , true) ∷ (1 , true) ∷ []) kar pomeni spr 1 je true in spr 2 je true
+_ : sat (Dis (Var 0 ∨ Lit (Var 1))) ≡ just ((0 , true) ∷ (1 , true) ∷ [])
+_ = refl
 
 -- (10) Tseytin transformation NNF --> CNF
