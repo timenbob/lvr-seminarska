@@ -295,3 +295,46 @@ _ : sat (Dis (Var 0 ∨ Lit (Var 1))) ≡ just ((0 , true) ∷ (1 , true) ∷ []
 _ = refl
 
 -- (10) Tseytin transformation NNF --> CNF
+
+-- obiscna distributivnost
+merge-dis : Disjunct → Disjunct → Disjunct
+merge-dis (Lit l) d' = l ∨ d'
+merge-dis (l ∨ d) d' = l ∨ merge-dis d d'
+
+merge-cnf : CNF → CNF → CNF
+merge-cnf (Dis d)  φ = d ∧ φ
+merge-cnf (d ∧ ψ)  φ = d ∧ merge-cnf ψ φ
+
+-- a ali (b in c) = (a ali b) in (a ali c)
+distri-a-or-cnf : Disjunct → CNF → CNF
+distri-a-or-cnf d (Dis d')  = Dis (merge-dis d d')
+distri-a-or-cnf d (d' ∧ φ)  = merge-cnf (distri-a-or-cnf d (Dis d')) (distri-a-or-cnf d φ)
+
+disstri-cnf-or-cnf : CNF → CNF → CNF
+disstri-cnf-or-cnf (Dis x) y = distri-a-or-cnf x y
+disstri-cnf-or-cnf (x ∧ x₁) y = merge-cnf (disstri-cnf-or-cnf (Dis x) y) (disstri-cnf-or-cnf x₁ y) 
+
+to-cnf : NNF → CNF
+to-cnf (Lit l) = Dis (Lit l)
+to-cnf (φ ∧ ψ) = merge-cnf (to-cnf φ) (to-cnf ψ)
+to-cnf (φ ∨ ψ) = disstri-cnf-or-cnf (to-cnf φ) (to-cnf ψ)
+
+-- testi za to-cnf
+ρ₁₀ : Assignment
+ρ₁₀ = (0 , true) ∷ (1 , false) ∷ (2 , true) ∷ []
+
+-- x₀ → CNF
+_ : eval-cnf ρ₁₀ (to-cnf (Lit (Var 0))) ≡ just true
+_ = refl
+
+-- x₀ ∧ x₁ → CNF
+_ : eval-cnf ρ₁₀ (to-cnf (Lit (Var 0) ∧ Lit (Var 1))) ≡ just false
+_ = refl
+
+-- x₀ ∨ x₁ → CNF (distributivnost)
+_ : eval-cnf ρ₁₀ (to-cnf (Lit (Var 0) ∨ Lit (Var 1))) ≡ just true
+_ = refl
+
+-- (x₀ ∨ x₁) ∧ x₂
+_ : eval-cnf ρ₁₀ (to-cnf ((Lit (Var 0) ∨ Lit (Var 1)) ∧ Lit (Var 2))) ≡ just true
+_ = refl
