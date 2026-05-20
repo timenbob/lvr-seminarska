@@ -1323,3 +1323,7 @@ tseytin-complete-lemma φ ρ p =
 
 tseytin-complete-fun : ∀ φ -> SatisfiableNNF-Fun φ → SatisfiableCNF-Fun (tseytin φ)
 tseytin-complete-fun φ (ρ , p) = tseytin-complete-lemma φ ρ p
+
+-- equisatisfiability: completeness & soundness.
+tseytin-equisatisfiable : ∀ φ → (SatisfiableNNF-Fun φ → SatisfiableCNF-Fun (tseytin φ)) × (SatisfiableCNF-Fun (tseytin φ) → SatisfiableNNF-Fun φ)
+tseytin-equisatisfiable φ = (tseytin-complete-fun φ , tseytin-sound-fun φ)
