@@ -1,4 +1,4 @@
-module seminarska.seminarska  where
+module seminarska where
 
 open import Data.Nat
 open import Data.Empty
@@ -277,11 +277,9 @@ dpll : List ℕ → Assignment → CNF → Maybe Assignment
 dpll [] ρ φ with eval-cnf ρ φ
 ... | just true = just ρ
 ... | _         = nothing
-
-dpll (n ∷ ns) ρ φ =
-  case dpll ns (ρ [ n ]≔ true) φ of λ where
-    (just a) → just a
-    nothing  → dpll ns (ρ [ n ]≔ false) φ
+dpll (n ∷ ns) ρ φ with dpll ns (ρ [ n ]≔ true) φ
+... | just a  = just a
+... | nothing = dpll ns (ρ [ n ]≔ false) φ
 
 sat : CNF → Maybe Assignment
 sat φ = dpll (nub (vars-cnf φ)) [] φ
@@ -296,7 +294,28 @@ _ = refl
 
 
 -- (10) dokaz sata
--- nimam pojma
+
+just-inj : {A : Set} {x y : A} → just x ≡ just y → x ≡ y
+just-inj refl = refl
+
+dpll-sound : (ns : List ℕ) (ρ : Assignment) (φ : CNF)
+           → (ρ' : Assignment)
+           → dpll ns ρ φ ≡ just ρ'
+           → eval-cnf ρ' φ ≡ just true
+
+dpll-sound [] ρ φ ρ' p with eval-cnf ρ φ in eq | p
+... | just true  | refl = eq
+... | just false | ()
+... | nothing    | ()
+
+dpll-sound (n ∷ ns) ρ φ ρ' p with dpll ns (ρ [ n ]≔ true) φ in eq
+... | just a  = dpll-sound ns (ρ [ n ]≔ true) φ ρ' (trans eq p)
+... | nothing = dpll-sound ns (ρ [ n ]≔ false) φ ρ' p
+
+sat-sound : (φ : CNF) (ρ : Assignment)
+          → sat φ ≡ just ρ
+          → eval-cnf ρ φ ≡ just true
+sat-sound φ ρ p = dpll-sound (nub (vars-cnf φ)) [] φ ρ p
 
 -- (11) Tseytin transformation NNF --> CNF
 
