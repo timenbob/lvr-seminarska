@@ -1,4 +1,4 @@
-module seminarska  where
+module seminarska.seminarska  where
 
 open import Data.Nat
 open import Data.Empty
@@ -12,7 +12,7 @@ open import Data.Nat.Properties using (_≟_)
 open import Relation.Nullary using (Dec; yes; no)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 open import Data.Unit using (⊤; tt)
-
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; trans; sym; cong; inspect; [_]; subst)
 -- za 9
 open import Function using (case_of_)
 -- (1)
@@ -294,7 +294,11 @@ _ = refl
 _ : sat (Dis (Var 0 ∨ Lit (Var 1))) ≡ just ((0 , true) ∷ (1 , true) ∷ [])
 _ = refl
 
--- (10) Tseytin transformation NNF --> CNF
+
+-- (10) dokaz sata
+-- nimam pojma
+
+-- (11) Tseytin transformation NNF --> CNF
 
 -- obiscna distributivnost
 merge-dis : Disjunct → Disjunct → Disjunct
@@ -337,4 +341,16 @@ _ = refl
 
 -- (x₀ ∨ x₁) ∧ x₂
 _ : eval-cnf ρ₁₀ (to-cnf ((Lit (Var 0) ∨ Lit (Var 1)) ∧ Lit (Var 2))) ≡ just true
+_ = refl
+
+-- (12) o construct a SAT solver for any formula
+
+sat-formula : Formula → Maybe Assignment
+sat-formula φ = sat (to-cnf (to-nnf φ))
+
+-- testi
+_ : sat-formula (Var 0 ∧ ¬ Var 0) ≡ nothing
+_ = refl
+
+_ : sat-formula (Var 0 ∨ Var 1) ≡ just ((0 , true) ∷ (1 , true) ∷ [])
 _ = refl
