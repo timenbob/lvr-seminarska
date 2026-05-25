@@ -1,4 +1,4 @@
-module seminarska where
+module seminarska.seminarska where
 
 open import Data.Nat
 open import Data.Empty
@@ -316,6 +316,7 @@ sat-sound : (φ : CNF) (ρ : Assignment)
           → sat φ ≡ just ρ
           → eval-cnf ρ φ ≡ just true
 sat-sound φ ρ p = dpll-sound (nub (vars-cnf φ)) [] φ ρ p
+
 
 -- (11) Tseytin transformation NNF --> CNF
 
