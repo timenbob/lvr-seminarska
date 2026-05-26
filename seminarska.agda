@@ -1,4 +1,4 @@
-module seminarska.seminarska where
+module seminarska where
 
 open import Data.Nat
 open import Data.Empty
@@ -318,7 +318,7 @@ sat-sound : (φ : CNF) (ρ : Assignment)
 sat-sound φ ρ p = dpll-sound (nub (vars-cnf φ)) [] φ ρ p
 
 
--- (11) Tseytin transformation NNF --> CNF
+-- (11) Classic  transformation NNF --> CNF
 
 -- obiscna distributivnost
 merge-dis : Disjunct → Disjunct → Disjunct
@@ -342,6 +342,46 @@ to-cnf : NNF → CNF
 to-cnf (Lit l) = Dis (Lit l)
 to-cnf (φ ∧ ψ) = merge-cnf (to-cnf φ) (to-cnf ψ)
 to-cnf (φ ∨ ψ) = disstri-cnf-or-cnf (to-cnf φ) (to-cnf ψ)
+
+-- (11) Tseytin transformation
+
+neg-lit : Literal → Literal
+neg-lit (Var n) = ¬Var n
+neg-lit (¬Var n) = Var n
+
+max-nnf : NNF → ℕ
+max-nnf (Lit (Var n)) = n
+max-nnf (Lit (¬Var n)) = n
+max-nnf (φ ∧ ψ) = max-nnf φ ⊔ max-nnf ψ
+max-nnf (φ ∨ ψ) = max-nnf φ ⊔ max-nnf ψ
+
+list-to-cnf : Disjunct → List Disjunct → CNF
+list-to-cnf d [] = Dis d
+list-to-cnf d (c ∷ cs) = d ∧ list-to-cnf c cs
+
+-- NNF: original formula
+-- ℕ: current free variable
+-- (List Disjunct × Literal × ℕ): (extra clauses, replaced literal, next free variable)
+tseytin-rec : NNF → ℕ → (List Disjunct × Literal × ℕ)
+
+-- Base case: no new rules, same literal, same free variable
+tseytin-rec (Lit l) n = ([] , l , n)
+
+-- AND case: process both sides
+tseytin-rec (φ ∧ ψ) n with tseytin-rec φ n
+... | (c1 , l1 , n1) with tseytin-rec ψ n1
+-- (Var n2) ≃ (l1 AND l2)
+... | (c2 , l2 , n2) = ((¬Var n2 ∨ Lit l1) ∷ (¬Var n2 ∨ Lit l2) ∷ (Var n2 ∨ (neg-lit l1 ∨ Lit (neg-lit l2))) ∷ c1 ++ c2 , Var n2 , suc n2)
+
+-- OR case: process both sides
+tseytin-rec (φ ∨ ψ) n with tseytin-rec φ n
+... | (c1 , l1 , n1) with tseytin-rec ψ n1
+-- (Var n2) ≃ (l1 OR l2)
+... | (c2 , l2 , n2) = ((Var n2 ∨ Lit (neg-lit l1)) ∷ (Var n2 ∨ Lit (neg-lit l2)) ∷ (¬Var n2 ∨ (l1 ∨ Lit l2)) ∷ c1 ++ c2 , Var n2 , suc n2)
+
+tseytin : NNF → CNF
+tseytin φ with tseytin-rec φ (suc (max-nnf φ))
+... | (clauses , root , _) = list-to-cnf (Lit root) clauses
 
 -- testi za to-cnf
 ρ₁₀ : Assignment
